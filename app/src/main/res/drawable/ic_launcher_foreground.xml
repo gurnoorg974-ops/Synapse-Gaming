@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Angular red "S" -->
+    <path android:fillColor="#FF4655"
+        android:pathData="M42,30 L74,30 L68,39 L46,39 L44,46 L70,46 L70,64 L62,78 L34,78 L40,69 L62,69 L62,56 L36,56 L36,40 Z" />
+    <!-- Synapse node -->
+    <path android:fillColor="#ECE8E1"
+        android:pathData="M76,26 L82,32 L76,38 L70,32 Z" />
+</vector>

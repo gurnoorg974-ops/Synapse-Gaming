@@ -102,7 +102,7 @@ fun PlayerScreen(uri: Uri, core: String, ext: String) {
         }
     }
 
-    val send = { action: Int, key: Int -> act.retro?.sendKeyEvent(action, key) }
+    val send: (Int, Int) -> Unit = { action, key -> act.retro?.sendKeyEvent(action, key) }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         val p = paths

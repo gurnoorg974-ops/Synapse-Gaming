@@ -52,7 +52,7 @@ fun isInstalled(ctx: Context, pkg: String) =
     ctx.packageManager.getLaunchIntentForPackage(pkg) != null
 
 @Composable
-fun SynapseApp() {
+fun SynapseMain() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("synapse", Context.MODE_PRIVATE) }
     var games by remember { mutableStateOf(emptyList<Game>()) }
@@ -72,6 +72,7 @@ fun SynapseApp() {
     LaunchedEffect(Unit) { rescan() }
 
     Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         bottomBar = {
             NavigationBar(containerColor = SynCard) {
                 Tab.entries.forEach {
@@ -96,7 +97,9 @@ fun SynapseApp() {
 
 @Composable
 fun Logo() {
-    Row {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        GalaxyLogo(34.dp, 0.6f)
+        Spacer(Modifier.width(8.dp))
         Text("SYNAPSE", color = SynRed, fontWeight = FontWeight.Black,
             style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.width(6.dp))
@@ -154,7 +157,11 @@ fun GameCard(game: Game, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = SynCard)
     ) {
         Box(
-            Modifier.fillMaxWidth().height(70.dp).background(game.console.color.copy(alpha = 0.85f)),
+            Modifier.fillMaxWidth().height(70.dp).background(
+                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                    listOf(game.console.color, game.console.color.copy(alpha = 0.45f))
+                )
+            ),
             contentAlignment = Alignment.Center
         ) { Text(game.console.label, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White) }
         Column(Modifier.padding(10.dp).heightIn(min = 56.dp)) {
@@ -191,7 +198,7 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(Console.entries.toList()) { c ->
                 val count = games.count { it.console == c }
-                val installed = c.emuPackage.isNotEmpty() && isInstalled(ctx, c.emuPackage)
+                val installed = emulatorPackage(ctx, c) != null
                 Card(
                     onClick = { onPick(c) }, shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = SynCard)
@@ -236,6 +243,6 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.6", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.8", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

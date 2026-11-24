@@ -2,10 +2,25 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <!-- Angular red "S" -->
-    <path android:fillColor="#FF4655"
-        android:pathData="M42,30 L74,30 L68,39 L46,39 L44,46 L70,46 L70,64 L62,78 L34,78 L40,69 L62,69 L62,56 L36,56 L36,40 Z" />
-    <!-- Synapse node -->
-    <path android:fillColor="#ECE8E1"
-        android:pathData="M76,26 L82,32 L76,38 L70,32 Z" />
+    <!-- soft glow -->
+    <path android:fillColor="#338B5CF6"
+        android:pathData="M54,54m-34,0a34,34 0 1,0 68,0a34,34 0 1,0 -68,0" />
+    <!-- orbit ring -->
+    <path android:strokeColor="#9B6BFF" android:strokeWidth="5" android:fillColor="#00000000"
+        android:pathData="M28,54a26,26 0 1,0 52,0a26,26 0 1,0 -52,0" />
+    <!-- core -->
+    <path android:fillColor="#F472B6"
+        android:pathData="M41,54a13,13 0 1,0 26,0a13,13 0 1,0 -26,0" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M49,52a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+    <!-- planet on the ring -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M63,31a4.5,4.5 0 1,0 9,0a4.5,4.5 0 1,0 -9,0" />
+    <!-- constellation stars -->
+    <path android:fillColor="#67E8F9"
+        android:pathData="M30.5,33a2.5,2.5 0 1,0 5,0a2.5,2.5 0 1,0 -5,0" />
+    <path android:fillColor="#67E8F9"
+        android:pathData="M74.5,76a2.5,2.5 0 1,0 5,0a2.5,2.5 0 1,0 -5,0" />
+    <path android:fillColor="#67E8F9"
+        android:pathData="M27.5,72a2,2 0 1,0 4,0a2,2 0 1,0 -4,0" />
 </vector>

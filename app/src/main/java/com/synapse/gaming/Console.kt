@@ -4,9 +4,10 @@ package com.synapse.gaming
 // core == null  -> launches the external emulator app instead
 enum class Console(
     val label: String, val emuPackage: String, val exts: Set<String>,
-    val folderHints: List<String>, val core: String? = null, val tint: Long = 0xFF5A6572
+    val folderHints: List<String>, val core: String? = null, val tint: Long = 0xFF5A6572,
+    val altPackage: String? = null
 ) {
-    XBOX360("Xbox 360", "aenu.ax360e", setOf("xex", "xbla"), listOf("xbox360", "x360"), tint = 0xFF52B043),
+    XBOX360("Xbox 360", "aenu.ax360e", setOf("xex", "xbla"), listOf("xbox360", "x360"), tint = 0xFF52B043, altPackage = "aenu.ax360e.free"),
     PS2("PS2", "xyz.aethersx2.android", setOf("chd", "cso", "bin"), listOf("ps2"), tint = 0xFF3B6FD4),
     GAMECUBE("GameCube", "org.dolphinemu.dolphinemu", setOf("gcm", "rvz", "gcz"), listOf("gc", "gamecube"), tint = 0xFF7B5CD6),
     WII("Wii", "org.dolphinemu.dolphinemu", setOf("wbfs", "wad"), listOf("wii"), tint = 0xFF2EB5D6),

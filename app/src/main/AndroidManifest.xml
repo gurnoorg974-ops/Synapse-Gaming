@@ -4,6 +4,7 @@
     <!-- Needed so we can see/launch installed emulators (Android 11+) -->
     <queries>
         <package android:name="aenu.ax360e" />
+        <package android:name="aenu.ax360e.free" />
         <package android:name="xyz.aethersx2.android" />
         <package android:name="org.dolphinemu.dolphinemu" />
         <package android:name="org.ppsspp.ppsspp" />

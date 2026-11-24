@@ -15,7 +15,7 @@ fun launchGame(ctx: Context, game: Game) {
         )
         return
     }
-    val pkg = game.console.emuPackage
+    val pkg = emulatorPackage(ctx, game.console) ?: game.console.emuPackage
     val intent = Intent(Intent.ACTION_VIEW).apply {
         setPackage(pkg)
         setDataAndType(game.uri, "*/*")
@@ -30,3 +30,8 @@ fun launchGame(ctx: Context, game: Game) {
         else Toast.makeText(ctx, "${game.console.label} emulator not installed", Toast.LENGTH_LONG).show()
     }
 }
+
+// Returns the installed emulator app for a console (checks the paid and free versions)
+fun emulatorPackage(ctx: Context, c: Console): String? =
+    listOfNotNull(c.emuPackage.ifEmpty { null }, c.altPackage)
+        .firstOrNull { ctx.packageManager.getLaunchIntentForPackage(it) != null }

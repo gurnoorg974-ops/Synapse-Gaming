@@ -43,6 +43,7 @@ class MainActivity : ComponentActivity() {
 
 enum class Tab(val label: String, val icon: ImageVector) {
     Library("Library", Icons.Default.Home),
+    Menu("Menu", MenuIcon),
     Consoles("Consoles", Icons.AutoMirrored.Filled.List),
     Settings("Settings", Icons.Default.Settings)
 }
@@ -84,6 +85,7 @@ fun SynapseApp() {
     ) { pad ->
         Box(Modifier.padding(pad).fillMaxSize()) {
             when (tab) {
+                Tab.Menu -> R4Screen(games)
                 Tab.Library -> LibraryScreen(games, filter, { filter = it }, { picker.launch(null) })
                 Tab.Consoles -> ConsolesScreen(games) { filter = it; tab = Tab.Library }
                 Tab.Settings -> SettingsScreen(games.size, { picker.launch(null) }, ::rescan)
@@ -189,7 +191,7 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(Console.entries.toList()) { c ->
                 val count = games.count { it.console == c }
-                val installed = isInstalled(ctx, c.emuPackage)
+                val installed = c.emuPackage.isNotEmpty() && isInstalled(ctx, c.emuPackage)
                 Card(
                     onClick = { onPick(c) }, shape = RoundedCornerShape(14.dp),
                     colors = CardDefaults.cardColors(containerColor = SynCard)
@@ -200,9 +202,9 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
                         Column(Modifier.weight(1f)) {
                             Text(c.label, fontWeight = FontWeight.Bold)
                             Text(
-                                if (installed) "Emulator ready" else "Emulator not installed",
+                                if (c.core != null) "Built in" else if (installed) "Emulator ready" else "Emulator not installed",
                                 style = MaterialTheme.typography.labelMedium,
-                                color = if (installed) SynMuted else SynRed
+                                color = if (c.core != null || installed) SynMuted else SynRed
                             )
                         }
                         Text("$count", style = MaterialTheme.typography.titleMedium)
@@ -234,6 +236,6 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.2", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.4", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

@@ -5,6 +5,16 @@ import android.content.Intent
 import android.widget.Toast
 
 fun launchGame(ctx: Context, game: Game) {
+    game.console.core?.let { core ->
+        ctx.startActivity(
+            Intent(ctx, PlayerActivity::class.java)
+                .putExtra("uri", game.uri.toString())
+                .putExtra("core", core)
+                .putExtra("ext", game.ext)
+                .putExtra("title", game.title)
+        )
+        return
+    }
     val pkg = game.console.emuPackage
     val intent = Intent(Intent.ACTION_VIEW).apply {
         setPackage(pkg)

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Needed so we can see/launch installed emulators (Android 11+) -->
     <queries>
         <package android:name="aenu.ax360e" />
@@ -9,7 +10,11 @@
         <package android:name="org.azahar_emu.azahar" />
         <package android:name="com.github.stenzek.duckstation" />
     </queries>
-    <application android:label="Synapse Gaming" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:theme="@style/Theme.Synapse">
+    <application android:label="Synapse Gaming" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:largeHeap="true" android:theme="@style/Theme.Synapse">
+        <activity android:name=".PlayerActivity" android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|smallestScreenSize|screenLayout|uiMode"
+            android:theme="@style/Theme.Synapse" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

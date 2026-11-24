@@ -34,4 +34,5 @@ val Console.color: Color get() = when (this) {
     Console.WII -> Color(0xFF2EB5D6)
     Console.PSP -> Color(0xFF5A6572)
     Console.N3DS -> Color(0xFFE0A030)
+    Console.N64 -> Color(0xFFD64545)
 }

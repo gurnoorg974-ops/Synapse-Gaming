@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 
-data class Game(val title: String, val uri: Uri, val console: Console)
+data class Game(val title: String, val uri: Uri, val console: Console, val ext: String = "")
 
 private val gameExts = Console.entries.flatMap { it.exts }.toSet() + setOf("iso")
 
@@ -16,7 +16,7 @@ fun scanLibrary(ctx: Context, root: Uri): List<Game> {
             val name = f.name ?: continue
             if (name.substringAfterLast('.', "").lowercase() !in gameExts) continue
             val console = Console.detect(name, dir.name ?: "") ?: continue
-            out += Game(name.substringBeforeLast('.'), f.uri, console)
+            out += Game(name.substringBeforeLast('.'), f.uri, console, name.substringAfterLast('.', ""))
         }
     }
     DocumentFile.fromTreeUri(ctx, root)?.let(::walk)

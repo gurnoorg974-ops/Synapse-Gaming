@@ -1,0 +1,26 @@
+name: Apply update
+on:
+  push:
+    paths:
+      - '*.zip'
+permissions:
+  contents: write
+  actions: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          unzip -oq *.zip
+          rm -rf SynapseGaming/.github
+          cp -r SynapseGaming/. .
+          rm -rf SynapseGaming *.zip
+          git config user.name "update-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A
+          git commit -m "Apply update"
+          git push
+          gh workflow run build.yml
+        env:
+          GH_TOKEN: ${{ github.token }}

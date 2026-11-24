@@ -66,7 +66,7 @@ fun R4Screen(games: List<Game>) {
             }
             .padding(14.dp)
     ) {
-        Text("SYNAPSE MENU", color = SynRed, fontFamily = FontFamily.Monospace,
+        Text("// SYNAPSE MENU", color = SynRed, fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(onClick = { cycle(-1) }) { Text("L") }
@@ -88,16 +88,16 @@ fun R4Screen(games: List<Game>) {
                     val on = i == sel
                     Row(
                         Modifier.fillMaxWidth()
-                            .background(if (on) Color(0xFF6D28D9) else Color.Transparent)
+                            .background(if (on) SynYellow else Color.Transparent)
                             .clickable { if (on) play() else sel = i }
                             .padding(horizontal = 12.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(if (on) "> " else "  ", fontFamily = FontFamily.Monospace, color = Color.White)
+                        Text(if (on) "> " else "  ", fontFamily = FontFamily.Monospace, color = if (on) Color.Black else SynRed)
                         Text(g.title, Modifier.weight(1f), maxLines = 1, fontFamily = FontFamily.Monospace,
-                            color = if (on) Color.White else SynText)
+                            color = if (on) Color.Black else SynText)
                         Text(g.console.label, style = MaterialTheme.typography.labelSmall,
-                            color = if (on) Color.White else g.console.color)
+                            color = if (on) Color.Black else g.console.color)
                     }
                 }
             }

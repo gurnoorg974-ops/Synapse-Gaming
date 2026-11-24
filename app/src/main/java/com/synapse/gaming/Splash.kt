@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -35,8 +36,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
 
-private val Neon = Color(0xFF9B6BFF)
-private val NeonPink = Color(0xFFC026D3)
+private val Neon = Color(0xFF00F0FF)
+private val NeonYellow = Color(0xFFFCEE0A)
+private val NeonPink = Color(0xFFFF2A6D)
 
 // Root: splash on top of the starfield + app
 @Composable
@@ -47,6 +49,7 @@ fun SynapseApp() {
         AnimatedVisibility(visible = showSplash, exit = fadeOut(tween(600))) {
             SplashScreen { showSplash = false }
         }
+        Scanlines()
     }
 }
 
@@ -123,6 +126,12 @@ fun SplashScreen(onDone: () -> Unit) {
         animationSpec = infiniteRepeatable(tween(1300, easing = LinearEasing), RepeatMode.Reverse),
         label = "pulse"
     )
+    val glitch by inf.animateFloat(
+        initialValue = 0f, targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart),
+        label = "glitch"
+    )
+    val glitchDx = if (glitch > 0.86f && glitch < 0.93f) 7.dp else 1.5.dp
     LaunchedEffect(Unit) {
         launch { progress.animateTo(1f, tween(2400, easing = LinearEasing)) }
         appear.animateTo(1f, tween(800))
@@ -132,7 +141,7 @@ fun SplashScreen(onDone: () -> Unit) {
 
     Box(
         Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(Color(0xFF040309), Color(0xFF0C0719), Color(0xFF1E0B45)))
+            Brush.verticalGradient(listOf(Color(0xFF040408), Color(0xFF0A0A16), Color(0xFF2A0A28)))
         )
     ) {
         Canvas(Modifier.fillMaxSize()) {
@@ -147,19 +156,19 @@ fun SplashScreen(onDone: () -> Unit) {
             }
             for (i in -8..8) {
                 drawLine(
-                    Neon.copy(alpha = 0.22f),
+                    NeonPink.copy(alpha = 0.35f),
                     Offset(w / 2f + i * w / 60f, horizon), Offset(w / 2f + i * w / 8f, h),
                     strokeWidth = 1.5f
                 )
             }
-            drawLine(Neon.copy(alpha = 0.6f), Offset(0f, horizon), Offset(w, horizon), strokeWidth = 2f)
+            drawLine(NeonPink.copy(alpha = 0.8f), Offset(0f, horizon), Offset(w, horizon), strokeWidth = 2f)
             // HUD corner brackets
             val m = 22.dp.toPx()
             val l = 38.dp.toPx()
             val sw = 3.dp.toPx()
             fun corner(x: Float, y: Float, dx: Float, dy: Float) {
-                drawLine(Neon, Offset(x, y), Offset(x + dx * l, y), strokeWidth = sw)
-                drawLine(Neon, Offset(x, y), Offset(x, y + dy * l), strokeWidth = sw)
+                drawLine(NeonYellow, Offset(x, y), Offset(x + dx * l, y), strokeWidth = sw)
+                drawLine(NeonYellow, Offset(x, y), Offset(x, y + dy * l), strokeWidth = sw)
             }
             corner(m, m, 1f, 1f)
             corner(w - m, m, -1f, 1f)
@@ -175,13 +184,24 @@ fun SplashScreen(onDone: () -> Unit) {
         ) {
             GalaxyLogo(180.dp, orbit)
             Spacer(Modifier.height(22.dp))
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    "SYNAPSE", color = NeonPink, fontSize = 36.sp, fontWeight = FontWeight.Black,
+                    letterSpacing = 6.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.offset(x = -glitchDx)
+                )
+                Text(
+                    "SYNAPSE", color = Neon, fontSize = 36.sp, fontWeight = FontWeight.Black,
+                    letterSpacing = 6.sp, fontFamily = FontFamily.Monospace, modifier = Modifier.offset(x = glitchDx)
+                )
+                Text(
+                    "SYNAPSE", color = SynText, fontSize = 36.sp, fontWeight = FontWeight.Black,
+                    letterSpacing = 6.sp, fontFamily = FontFamily.Monospace
+                )
+            }
             Text(
-                "SYNAPSE", color = SynText, fontSize = 36.sp, fontWeight = FontWeight.Black, letterSpacing = 8.sp,
-                style = TextStyle(shadow = Shadow(color = Neon, blurRadius = 28f))
-            )
-            Text(
-                "GAMING", color = Neon, fontSize = 18.sp, fontWeight = FontWeight.Bold, letterSpacing = 14.sp,
-                style = TextStyle(shadow = Shadow(color = NeonPink, blurRadius = 20f))
+                "GAMING", color = NeonYellow, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                letterSpacing = 14.sp, fontFamily = FontFamily.Monospace,
+                style = TextStyle(shadow = Shadow(color = NeonYellow, blurRadius = 18f))
             )
         }
 
@@ -189,14 +209,27 @@ fun SplashScreen(onDone: () -> Unit) {
             Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("LOADING", color = SynMuted, fontSize = 11.sp, letterSpacing = 5.sp)
+            Text("> INITIALIZING", color = SynMuted, fontSize = 11.sp, letterSpacing = 3.sp, fontFamily = FontFamily.Monospace)
             Spacer(Modifier.height(8.dp))
             Box(Modifier.width(200.dp).height(3.dp).background(Color(0x33FFFFFF))) {
                 Box(
                     Modifier.fillMaxWidth(progress.value).fillMaxHeight()
-                        .background(Brush.horizontalGradient(listOf(Neon, NeonPink)))
+                        .background(Brush.horizontalGradient(listOf(NeonYellow, NeonPink)))
                 )
             }
+        }
+    }
+}
+
+// Faint CRT scanlines over everything
+@Composable
+fun Scanlines() {
+    Canvas(Modifier.fillMaxSize()) {
+        val step = 4.dp.toPx()
+        var y = 0f
+        while (y < size.height) {
+            drawLine(Color(0x26000000), Offset(0f, y), Offset(size.width, y), strokeWidth = 1.5f)
+            y += step
         }
     }
 }

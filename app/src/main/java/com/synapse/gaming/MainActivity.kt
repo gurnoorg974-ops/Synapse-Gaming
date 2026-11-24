@@ -104,7 +104,7 @@ fun Logo() {
         Text("SYNAPSE", color = SynRed, fontWeight = FontWeight.Black,
             style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.width(6.dp))
-        Text("GAMING", fontWeight = FontWeight.Light,
+        Text("GAMING", color = SynYellow, fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.headlineSmall)
     }
 }
@@ -158,17 +158,14 @@ fun GameCard(game: Game, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder)
     ) {
         Box(
-            Modifier.fillMaxWidth().height(70.dp).background(
-                androidx.compose.ui.graphics.Brush.horizontalGradient(
-                    listOf(game.console.color, game.console.color.copy(alpha = 0.45f))
-                )
-            ),
+            Modifier.fillMaxWidth().height(60.dp).background(androidx.compose.ui.graphics.Color(0xFF0C0D14)),
             contentAlignment = Alignment.Center
-        ) { Text(game.console.label, fontWeight = FontWeight.Bold, color = androidx.compose.ui.graphics.Color.White) }
+        ) { Text(game.console.label.uppercase(), fontWeight = FontWeight.Bold, color = game.console.color) }
+        Box(Modifier.fillMaxWidth().height(2.dp).background(game.console.color))
         Column(Modifier.padding(10.dp).heightIn(min = 56.dp)) {
             Text(game.title, maxLines = 2, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(4.dp))
-            Text("Tap to play", style = MaterialTheme.typography.labelSmall, color = SynRed)
+            Text("> PLAY", style = MaterialTheme.typography.labelSmall, color = SynRed)
         }
     }
 }
@@ -193,7 +190,7 @@ fun EmptyState(title: String, body: String, action: String?, onAction: () -> Uni
 fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().padding(14.dp)) {
-        Text("Consoles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("// CONSOLES", color = SynRed, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text("Tap a console to see its games", color = SynMuted)
         Spacer(Modifier.height(10.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -226,7 +223,7 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
 @Composable
 fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Settings", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("// SETTINGS", color = SynRed, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Games folder", fontWeight = FontWeight.Bold)
@@ -244,6 +241,6 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.10", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.11", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -14,7 +15,7 @@ import androidx.compose.ui.unit.sp
 
 // Modern cyberpunk: deep black, soft glass cards, neon yellow / cyan / magenta accents
 val SynBg = Color(0xFF0A0A0F)
-val SynCard = Color(0xFF14151F)
+val SynCard = Color(0x1AFFFFFF)       // frosted glass fill
 val SynRed = Color(0xFF00F0FF)       // accent text = neon cyan (name kept for old code)
 val SynYellow = Color(0xFFFCEE0A)
 val SynPink = Color(0xFFFF2A6D)
@@ -22,6 +23,8 @@ val SynBorder = Color(0x1FFFFFFF)    // hairline border
 val SynText = Color(0xFFF4F6FA)
 val SynMuted = Color(0xFF9AA3B5)
 val GxShape = RoundedCornerShape(22.dp)
+// Glass rim: bright at the top edge, fading down
+val SynGlassRim = Brush.verticalGradient(listOf(Color(0x80FFFFFF), Color(0x14FFFFFF)))
 
 private val BaseType = Typography()
 private val ModernType = Typography(

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -29,11 +30,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,21 +61,93 @@ fun isInstalled(ctx: Context, pkg: String) =
 fun SynapseMain() {
     val ctx = LocalContext.current
     val prefs = remember { ctx.getSharedPreferences("synapse", Context.MODE_PRIVATE) }
+    val scope = rememberCoroutineScope()
     var games by remember { mutableStateOf(emptyList<Game>()) }
     var tab by rememberSaveable { mutableStateOf(Tab.Library) }
     var filter by remember { mutableStateOf<Console?>(null) }
+    var progress by remember { mutableStateOf<ImportProgress?>(null) }
+    var notice by remember { mutableStateOf<String?>(null) }
+    var pending by remember { mutableStateOf<Console?>(null) }
 
-    fun rescan() { prefs.getString("root", null)?.let { games = scanLibrary(ctx, Uri.parse(it)) } }
+    fun root(): Uri? = prefs.getString("root", null)?.let { Uri.parse(it) }
 
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+    fun rescan() {
+        val r = root() ?: return
+        scope.launch { games = withContext(Dispatchers.IO) { scanLibrary(ctx, r) } }
+    }
+
+    // Pick (or create) the main folder. Synapse then makes a folder for every console inside it.
+    val treePicker = rememberLauncherForActivityResult(OpenTreeRW()) { uri ->
         if (uri != null) {
-            ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            try {
+                ctx.contentResolver.takePersistableUriPermission(
+                    uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                try {
+                    ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                } catch (_: Exception) {}
+            }
             prefs.edit().putString("root", uri.toString()).apply()
-            rescan()
-            tab = Tab.Library
+            scope.launch {
+                val ok = withContext(Dispatchers.IO) { ensureConsoleFolders(ctx, uri) }
+                notice = if (ok) "Console folders are ready. Tap + Add on a console to add games."
+                else "Couldn't set up folders here. Pick or create a new folder (not the top-level Downloads folder)."
+                games = withContext(Dispatchers.IO) { scanLibrary(ctx, uri) }
+            }
+            tab = Tab.Consoles
         }
     }
-    LaunchedEffect(Unit) { rescan() }
+
+    // Pick game files from the phone's file manager and copy them into the console's folder
+    val gamePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        val c = pending
+        val r = root()
+        pending = null
+        if (c != null && r != null && uris.isNotEmpty()) {
+            scope.launch {
+                progress = ImportProgress("", 0, uris.size, 0f)
+                val res = importGames(ctx, r, c, uris) { progress = it }
+                progress = null
+                notice = buildString {
+                    append("Added ${res.copied} to ${c.label}")
+                    if (res.skipped > 0) append(", ${res.skipped} already there")
+                    if (res.failed > 0) append(", ${res.failed} failed")
+                }
+                games = withContext(Dispatchers.IO) { scanLibrary(ctx, r) }
+            }
+        }
+    }
+
+    fun addGames(c: Console) {
+        val r = root()
+        if (r == null) {
+            notice = "First choose or create a folder for your games."
+            treePicker.launch(null)
+            return
+        }
+        if (!hasWriteAccess(ctx, r)) {
+            notice = "Pick your games folder once more so Synapse can add games to it."
+            treePicker.launch(null)
+            return
+        }
+        pending = c
+        gamePicker.launch(arrayOf("*/*"))
+    }
+
+    LaunchedEffect(Unit) {
+        val r = root()
+        if (r != null) {
+            withContext(Dispatchers.IO) { if (hasWriteAccess(ctx, r)) ensureConsoleFolders(ctx, r) }
+            rescan()
+        }
+    }
+    LaunchedEffect(notice) {
+        notice?.let {
+            Toast.makeText(ctx, it, Toast.LENGTH_LONG).show()
+            notice = null
+        }
+    }
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -79,12 +156,41 @@ fun SynapseMain() {
     ) { pad ->
         Box(Modifier.padding(pad).fillMaxSize()) {
             when (tab) {
-                Tab.Menu -> R4Screen(games)
-                Tab.Library -> LibraryScreen(games, filter, { filter = it }, { picker.launch(null) })
-                Tab.Consoles -> ConsolesScreen(games) { filter = it; tab = Tab.Library }
-                Tab.Settings -> SettingsScreen(games.size, { picker.launch(null) }, ::rescan)
+                Tab.Menu -> R4Screen(games) { c ->
+                    if (c != null) addGames(c) else {
+                        tab = Tab.Consoles
+                        notice = "Tap + Add next to a console."
+                    }
+                }
+                Tab.Library -> LibraryScreen(games, filter, { filter = it }) {
+                    if (root() == null) treePicker.launch(null) else tab = Tab.Consoles
+                }
+                Tab.Consoles -> ConsolesScreen(games, { filter = it; tab = Tab.Library }, ::addGames)
+                Tab.Settings -> SettingsScreen(games.size, { treePicker.launch(null) }, ::rescan)
             }
         }
+    }
+
+    progress?.let { p ->
+        AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            containerColor = androidx.compose.ui.graphics.Color(0xFF14151F),
+            title = { Text("Adding games") },
+            text = {
+                Column {
+                    Text(
+                        if (p.fileName.isEmpty()) "Starting..." else "${p.index + 1} of ${p.total}: ${p.fileName}",
+                        maxLines = 2
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    LinearProgressIndicator(
+                        progress = { p.fraction }, modifier = Modifier.fillMaxWidth(),
+                        color = SynYellow, trackColor = Color(0x33FFFFFF)
+                    )
+                }
+            }
+        )
     }
 }
 
@@ -132,8 +238,8 @@ fun LibraryScreen(games: List<Game>, filter: Console?, onFilter: (Console?) -> U
         }
         when {
             games.isEmpty() -> EmptyState(
-                "No games yet", "Pick the folder where your games are stored and we'll sort them for you.",
-                "Add games folder", onAddFolder
+                "No games yet", "Choose or create a folder for Synapse. It sets up a folder for every console, then you add games with the + Add buttons.",
+                "Add games", onAddFolder
             )
             shown.isEmpty() -> EmptyState("Nothing found", "Try a different search or filter.", null, {})
             else -> LazyVerticalGrid(
@@ -148,32 +254,34 @@ fun LibraryScreen(games: List<Game>, filter: Console?, onFilter: (Console?) -> U
 
 @Composable
 fun GameCard(game: Game, onClick: () -> Unit) {
-    val tint = game.console.color
+    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val (sx, sy) = stretchScale(interaction, 0.05f)
     Card(
         onClick = onClick,
+        interactionSource = interaction,
+        modifier = Modifier.graphicsLayer { scaleX = sx; scaleY = sy },
         shape = GxShape,
         colors = CardDefaults.cardColors(containerColor = SynCard),
-        border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, SynGlassRim)
     ) {
-        Box(
-            Modifier.fillMaxWidth().height(104.dp).background(
-                androidx.compose.ui.graphics.Brush.linearGradient(
-                    listOf(tint.copy(alpha = 0.85f), tint.copy(alpha = 0.15f))
+        Box(Modifier.fillMaxWidth().aspectRatio(0.8f)) {
+            CoverArt(game, Modifier.fillMaxSize())
+            Column(Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 12.dp, end = 54.dp)) {
+                Text(
+                    game.console.label.uppercase(), color = game.console.color,
+                    fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall
                 )
-            )
-        ) {
-            Text(
-                game.console.label.uppercase(), Modifier.align(Alignment.TopStart).padding(12.dp),
-                color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.labelSmall
-            )
+                Text(
+                    game.title, maxLines = 2, color = androidx.compose.ui.graphics.Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             Box(
                 Modifier.align(Alignment.BottomEnd).padding(10.dp).size(38.dp)
                     .clip(androidx.compose.foundation.shape.CircleShape).background(SynYellow),
                 contentAlignment = Alignment.Center
             ) { Icon(MenuIcon, null, tint = androidx.compose.ui.graphics.Color.Black) }
         }
-        Text(game.title, Modifier.padding(12.dp), maxLines = 2, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -194,11 +302,11 @@ fun EmptyState(title: String, body: String, action: String?, onAction: () -> Uni
 }
 
 @Composable
-fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
+fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit, onAdd: (Console) -> Unit) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().padding(14.dp)) {
         Text("Consoles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Text("Tap a console to see its games", color = SynMuted)
+        Text("Tap a console to see its games, or + Add to put games in its folder", color = SynMuted)
         Spacer(Modifier.height(10.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(Console.entries.toList()) { c ->
@@ -206,7 +314,7 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
                 val installed = emulatorPackage(ctx, c) != null
                 Card(
                     onClick = { onPick(c) }, shape = GxShape,
-                    colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder)
+                    colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynGlassRim)
                 ) {
                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(c.color))
@@ -220,6 +328,8 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
                             )
                         }
                         Text("$count", style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.width(10.dp))
+                        OutlinedButton(onClick = { onAdd(c) }) { Text("+ Add") }
                     }
                 }
             }
@@ -231,7 +341,7 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
 fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder), shape = GxShape) {
+        Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynGlassRim), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Games folder", fontWeight = FontWeight.Bold)
                 Text("$count games found", color = SynMuted)
@@ -241,13 +351,13 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 }
             }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder), shape = GxShape) {
+        Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynGlassRim), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Your device", fontWeight = FontWeight.Bold)
                 Text(SocInfo.model, color = SynMuted)
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.12", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.14", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

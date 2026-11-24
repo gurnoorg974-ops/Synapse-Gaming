@@ -24,11 +24,14 @@ enum class Console(
 
     companion object {
         // Folder name words win (so .iso files can be sorted), then the file type.
+        fun fromFolder(parentFolder: String): Console? {
+            val words = parentFolder.lowercase().split(Regex("[^a-z0-9]+")).filter { it.isNotEmpty() }
+            return entries.firstOrNull { c -> c.folderHints.any { it in words } }
+        }
+
         fun detect(fileName: String, parentFolder: String): Console? {
             val ext = fileName.substringAfterLast('.', "").lowercase()
-            val words = parentFolder.lowercase().split(Regex("[^a-z0-9]+")).filter { it.isNotEmpty() }
-            entries.firstOrNull { c -> c.folderHints.any { it in words } }?.let { return it }
-            return entries.firstOrNull { ext in it.exts }
+            return fromFolder(parentFolder) ?: entries.firstOrNull { ext in it.exts }
         }
     }
 }

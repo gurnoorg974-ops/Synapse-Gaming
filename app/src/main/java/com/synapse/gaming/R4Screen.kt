@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -28,7 +29,7 @@ val MenuIcon: ImageVector get() = Icons.Default.PlayArrow
 
 // R4-card style menu: one simple list of every game, pick one and press PLAY.
 @Composable
-fun R4Screen(games: List<Game>) {
+fun R4Screen(games: List<Game>, onAdd: (Console?) -> Unit = {}) {
     val ctx = LocalContext.current
     var console by remember { mutableStateOf<Console?>(null) }
     var sel by remember { mutableIntStateOf(0) }
@@ -78,6 +79,16 @@ fun R4Screen(games: List<Game>) {
             OutlinedButton(onClick = { cycle(1) }) { Text("R") }
         }
 
+        list.getOrNull(sel)?.let { g ->
+            Box(Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(20.dp))) {
+                CoverArt(g, Modifier.fillMaxSize())
+                Text(
+                    g.title, Modifier.align(Alignment.BottomStart).padding(12.dp), maxLines = 1,
+                    color = Color.White, fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+        }
         if (list.isEmpty()) {
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Text("No games. Add a folder in Settings.", color = SynMuted)
@@ -107,6 +118,7 @@ fun R4Screen(games: List<Game>) {
             OutlinedButton(onClick = { move(-1) }, Modifier.weight(1f)) { Text("UP") }
             OutlinedButton(onClick = { move(1) }, Modifier.weight(1f)) { Text("DOWN") }
             Button(onClick = { play() }, Modifier.weight(1.4f), enabled = list.isNotEmpty()) { Text("PLAY") }
+            OutlinedButton(onClick = { onAdd(console) }, Modifier.weight(0.7f)) { Text("+") }
         }
     }
 }

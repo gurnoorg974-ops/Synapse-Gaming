@@ -29,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -74,16 +75,7 @@ fun SynapseMain() {
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
         contentColor = SynText,
-        bottomBar = {
-            NavigationBar(containerColor = SynCard) {
-                Tab.entries.forEach {
-                    NavigationBarItem(
-                        selected = tab == it, onClick = { tab = it },
-                        icon = { Icon(it.icon, it.label) }, label = { Text(it.label) }
-                    )
-                }
-            }
-        }
+        bottomBar = { FloatingNav(tab) { tab = it } }
     ) { pad ->
         Box(Modifier.padding(pad).fillMaxSize()) {
             when (tab) {
@@ -99,7 +91,7 @@ fun SynapseMain() {
 @Composable
 fun Logo() {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        GalaxyLogo(34.dp, 0.6f)
+        GalaxyLogo(32.dp)
         Spacer(Modifier.width(8.dp))
         Text("SYNAPSE", color = SynRed, fontWeight = FontWeight.Black,
             style = MaterialTheme.typography.headlineSmall)
@@ -126,12 +118,16 @@ fun LibraryScreen(games: List<Game>, filter: Console?, onFilter: (Console?) -> U
             modifier = Modifier.fillMaxWidth(), singleLine = true,
             placeholder = { Text("Search games") },
             leadingIcon = { Icon(Icons.Default.Search, null) },
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(28.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = SynCard, focusedContainerColor = SynCard,
+                unfocusedBorderColor = Color(0x22FFFFFF), focusedBorderColor = SynRed
+            )
         )
         LazyRow(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            item { FilterChip(filter == null, { onFilter(null) }, { Text("All") }) }
+            item { FilterChip(filter == null, { onFilter(null) }, { Text("All") }, shape = RoundedCornerShape(50)) }
             items(Console.entries.filter { c -> games.any { it.console == c } }) { c ->
-                FilterChip(filter == c, { onFilter(c) }, { Text(c.label) })
+                FilterChip(filter == c, { onFilter(c) }, { Text(c.label) }, shape = RoundedCornerShape(50))
             }
         }
         when {
@@ -152,21 +148,32 @@ fun LibraryScreen(games: List<Game>, filter: Console?, onFilter: (Console?) -> U
 
 @Composable
 fun GameCard(game: Game, onClick: () -> Unit) {
+    val tint = game.console.color
     Card(
         onClick = onClick,
         shape = GxShape,
-        colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder)
+        colors = CardDefaults.cardColors(containerColor = SynCard),
+        border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder)
     ) {
         Box(
-            Modifier.fillMaxWidth().height(60.dp).background(androidx.compose.ui.graphics.Color(0xFF0C0D14)),
-            contentAlignment = Alignment.Center
-        ) { Text(game.console.label.uppercase(), fontWeight = FontWeight.Bold, color = game.console.color) }
-        Box(Modifier.fillMaxWidth().height(2.dp).background(game.console.color))
-        Column(Modifier.padding(10.dp).heightIn(min = 56.dp)) {
-            Text(game.title, maxLines = 2, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(4.dp))
-            Text("> PLAY", style = MaterialTheme.typography.labelSmall, color = SynRed)
+            Modifier.fillMaxWidth().height(104.dp).background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(tint.copy(alpha = 0.85f), tint.copy(alpha = 0.15f))
+                )
+            )
+        ) {
+            Text(
+                game.console.label.uppercase(), Modifier.align(Alignment.TopStart).padding(12.dp),
+                color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.labelSmall
+            )
+            Box(
+                Modifier.align(Alignment.BottomEnd).padding(10.dp).size(38.dp)
+                    .clip(androidx.compose.foundation.shape.CircleShape).background(SynYellow),
+                contentAlignment = Alignment.Center
+            ) { Icon(MenuIcon, null, tint = androidx.compose.ui.graphics.Color.Black) }
         }
+        Text(game.title, Modifier.padding(12.dp), maxLines = 2, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -190,7 +197,7 @@ fun EmptyState(title: String, body: String, action: String?, onAction: () -> Uni
 fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
     val ctx = LocalContext.current
     Column(Modifier.fillMaxSize().padding(14.dp)) {
-        Text("// CONSOLES", color = SynRed, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Consoles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text("Tap a console to see its games", color = SynMuted)
         Spacer(Modifier.height(10.dp))
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -223,7 +230,7 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
 @Composable
 fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("// SETTINGS", color = SynRed, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("Settings", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Games folder", fontWeight = FontWeight.Bold)
@@ -241,6 +248,6 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.11", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.12", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

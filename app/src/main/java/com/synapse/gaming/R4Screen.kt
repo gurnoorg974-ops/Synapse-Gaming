@@ -66,7 +66,7 @@ fun R4Screen(games: List<Game>) {
             }
             .padding(14.dp)
     ) {
-        Text("// SYNAPSE MENU", color = SynRed, fontFamily = FontFamily.Monospace,
+        Text("Quick Menu", color = SynRed, fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Black, style = MaterialTheme.typography.titleLarge)
         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(onClick = { cycle(-1) }) { Text("L") }

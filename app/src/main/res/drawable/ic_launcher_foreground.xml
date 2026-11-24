@@ -6,13 +6,14 @@
     <path android:fillColor="#338B5CF6"
         android:pathData="M54,54m-34,0a34,34 0 1,0 68,0a34,34 0 1,0 -68,0" />
     <!-- orbit ring -->
-    <path android:strokeColor="#9B6BFF" android:strokeWidth="5" android:fillColor="#00000000"
+    <path android:strokeColor="#C4B5FD" android:strokeWidth="5" android:fillColor="#00000000"
         android:pathData="M28,54a26,26 0 1,0 52,0a26,26 0 1,0 -52,0" />
     <!-- core -->
-    <path android:fillColor="#F472B6"
-        android:pathData="M41,54a13,13 0 1,0 26,0a13,13 0 1,0 -26,0" />
+    <path android:fillColor="#7C3AED"
+        android:pathData="M38,54a16,16 0 1,0 32,0a16,16 0 1,0 -32,0" />
+    <!-- S -->
     <path android:fillColor="#FFFFFF"
-        android:pathData="M49,52a5,5 0 1,0 10,0a5,5 0 1,0 -10,0" />
+        android:pathData="M45,42L63,42L63,46.5L49.5,46.5L49.5,51.5L63,51.5L63,65.5L45,65.5L45,61L58.5,61L58.5,56L45,56Z" />
     <!-- planet on the ring -->
     <path android:fillColor="#FFFFFF"
         android:pathData="M63,31a4.5,4.5 0 1,0 9,0a4.5,4.5 0 1,0 -9,0" />

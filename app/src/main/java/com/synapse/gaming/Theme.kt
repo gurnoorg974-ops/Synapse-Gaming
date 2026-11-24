@@ -5,7 +5,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-val SynBg = Color(0xFF0A0A1A)
+val SynBg = Color(0xFF07050F)
 val SynCard = Color(0xE6151530)
 val SynRed = Color(0xFF9B6BFF) // main accent (galaxy violet)
 val SynText = Color(0xFFEDE9FE)

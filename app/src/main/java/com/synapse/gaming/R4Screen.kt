@@ -88,7 +88,7 @@ fun R4Screen(games: List<Game>) {
                     val on = i == sel
                     Row(
                         Modifier.fillMaxWidth()
-                            .background(if (on) SynRed else Color.Transparent)
+                            .background(if (on) Color(0xFF6D28D9) else Color.Transparent)
                             .clickable { if (on) play() else sel = i }
                             .padding(horizontal = 12.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically

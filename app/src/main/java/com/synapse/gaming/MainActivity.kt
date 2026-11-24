@@ -73,6 +73,7 @@ fun SynapseMain() {
 
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent,
+        contentColor = SynText,
         bottomBar = {
             NavigationBar(containerColor = SynCard) {
                 Tab.entries.forEach {
@@ -153,8 +154,8 @@ fun LibraryScreen(games: List<Game>, filter: Console?, onFilter: (Console?) -> U
 fun GameCard(game: Game, onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = SynCard)
+        shape = GxShape,
+        colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder)
     ) {
         Box(
             Modifier.fillMaxWidth().height(70.dp).background(
@@ -200,8 +201,8 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
                 val count = games.count { it.console == c }
                 val installed = emulatorPackage(ctx, c) != null
                 Card(
-                    onClick = { onPick(c) }, shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = SynCard)
+                    onClick = { onPick(c) }, shape = GxShape,
+                    colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder)
                 ) {
                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(c.color))
@@ -226,7 +227,7 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit) {
 fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
     Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Card(colors = CardDefaults.cardColors(containerColor = SynCard), shape = RoundedCornerShape(14.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Games folder", fontWeight = FontWeight.Bold)
                 Text("$count games found", color = SynMuted)
@@ -236,13 +237,13 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 }
             }
         }
-        Card(colors = CardDefaults.cardColors(containerColor = SynCard), shape = RoundedCornerShape(14.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynBorder), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Your device", fontWeight = FontWeight.Bold)
                 Text(SocInfo.model, color = SynMuted)
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.9", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.10", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

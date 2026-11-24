@@ -43,54 +43,9 @@ private val NeonPink = Color(0xFFC026D3)
 fun SynapseApp() {
     var showSplash by rememberSaveable { mutableStateOf(true) }
     Box(Modifier.fillMaxSize().background(SynBg)) {
-        Starfield()
         SynapseMain()
         AnimatedVisibility(visible = showSplash, exit = fadeOut(tween(600))) {
             SplashScreen { showSplash = false }
-        }
-    }
-}
-
-// Twinkling stars and soft purple nebula glows
-@Composable
-fun Starfield(modifier: Modifier = Modifier) {
-    val stars = remember {
-        val r = java.util.Random(7)
-        List(90) { Triple(r.nextFloat(), r.nextFloat(), 0.6f + r.nextFloat() * 1.6f) }
-    }
-    val t = rememberInfiniteTransition(label = "stars")
-    val twinkle by t.animateFloat(
-        initialValue = 0.3f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Reverse),
-        label = "twinkle"
-    )
-    Canvas(modifier.fillMaxSize()) {
-        val w = size.width
-        val h = size.height
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x558B5CF6), Color.Transparent),
-                center = Offset(w * 0.1f, h * 0.08f), radius = w * 0.8f
-            ),
-            radius = w * 0.8f, center = Offset(w * 0.1f, h * 0.08f)
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x33C026D3), Color.Transparent),
-                center = Offset(w * 0.95f, h * 0.9f), radius = w * 0.8f
-            ),
-            radius = w * 0.8f, center = Offset(w * 0.95f, h * 0.9f)
-        )
-        stars.forEachIndexed { i, (x, y, r) ->
-            val a = when (i % 3) {
-                0 -> twinkle
-                1 -> 1.3f - twinkle
-                else -> 0.7f
-            }
-            drawCircle(
-                color = Color.White.copy(alpha = a.coerceIn(0.1f, 1f)),
-                radius = r * density, center = Offset(x * w, y * h)
-            )
         }
     }
 }
@@ -152,7 +107,7 @@ fun GalaxyLogo(logoSize: Dp, orbit: Float = 0f, modifier: Modifier = Modifier, s
     }
 }
 
-// Gaming-style splash: dark purple, neon grid floor, HUD corners, glowing logo, loading bar
+// Opera GX style splash: black and neon purple, grid floor, HUD corners, logo, loading bar
 @Composable
 fun SplashScreen(onDone: () -> Unit) {
     val appear = remember { Animatable(0f) }
@@ -177,11 +132,9 @@ fun SplashScreen(onDone: () -> Unit) {
 
     Box(
         Modifier.fillMaxSize().background(
-            Brush.verticalGradient(listOf(Color(0xFF05030D), Color(0xFF12082A), Color(0xFF2A0F5C)))
+            Brush.verticalGradient(listOf(Color(0xFF040309), Color(0xFF0C0719), Color(0xFF1E0B45)))
         )
     ) {
-        Starfield()
-
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height

@@ -8,18 +8,24 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
@@ -29,6 +35,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
 import java.util.zip.ZipInputStream
+import kotlin.math.roundToInt
 
 class PlayerActivity : ComponentActivity() {
     var retro: GLRetroView? = null
@@ -103,6 +110,11 @@ fun PlayerScreen(uri: Uri, core: String, ext: String) {
     }
 
     val send: (Int, Int) -> Unit = { action, key -> act.retro?.sendKeyEvent(action, key) }
+    val sendAxis: (Float, Float) -> Unit = { x, y ->
+        act.retro?.sendMotionEvent(GLRetroView.MOTION_SOURCE_ANALOG_LEFT, x, y)
+    }
+    val psStyle = core == "ppsspp" || core == "pcsx_rearmed"
+    val showStick = psStyle || core == "mupen64plus_next_gles3"
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         val p = paths
@@ -123,7 +135,7 @@ fun PlayerScreen(uri: Uri, core: String, ext: String) {
                     }
                 }
             )
-            Controls(send)
+            Controls(send, sendAxis, psStyle, showStick)
         } else {
             Column(
                 Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally
@@ -138,49 +150,117 @@ fun PlayerScreen(uri: Uri, core: String, ext: String) {
     }
 }
 
+private val PadBg = Color(0x80303A46)
+
+private fun Modifier.padPress(key: Int, send: (Int, Int) -> Unit): Modifier =
+    pointerInput(key) {
+        detectTapGestures(onPress = {
+            send(KeyEvent.ACTION_DOWN, key)
+            try { awaitRelease() } finally { send(KeyEvent.ACTION_UP, key) }
+        })
+    }
+
 @Composable
-private fun PadButton(label: String, key: Int, send: (Int, Int) -> Unit, size: Int = 52) {
+private fun PadButton(
+    label: String, key: Int, send: (Int, Int) -> Unit, size: Int = 52,
+    textColor: Color = Color.White, textSize: Int = 16
+) {
     Box(
-        Modifier.size(size.dp)
-            .background(Color(0x55FFFFFF), CircleShape)
-            .pointerInput(Unit) {
-                detectTapGestures(onPress = {
-                    send(KeyEvent.ACTION_DOWN, key)
-                    try { awaitRelease() } finally { send(KeyEvent.ACTION_UP, key) }
-                })
-            },
+        Modifier.size(size.dp).background(PadBg, CircleShape).padPress(key, send),
         contentAlignment = Alignment.Center
-    ) { Text(label, color = Color.White) }
+    ) { Text(label, color = textColor, fontSize = textSize.sp, fontWeight = FontWeight.Bold) }
 }
 
 @Composable
-private fun BoxScope.Controls(send: (Int, Int) -> Unit) {
-    // D-pad
-    Column(Modifier.align(Alignment.BottomStart).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        PadButton("^", KeyEvent.KEYCODE_DPAD_UP, send)
-        Row {
-            PadButton("<", KeyEvent.KEYCODE_DPAD_LEFT, send)
-            Spacer(Modifier.size(52.dp))
-            PadButton(">", KeyEvent.KEYCODE_DPAD_RIGHT, send)
-        }
-        PadButton("v", KeyEvent.KEYCODE_DPAD_DOWN, send)
+private fun PillButton(label: String, key: Int, send: (Int, Int) -> Unit) {
+    Box(
+        Modifier.width(76.dp).height(32.dp).background(PadBg, RoundedCornerShape(16.dp)).padPress(key, send),
+        contentAlignment = Alignment.Center
+    ) { Text(label, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+}
+
+// On-screen analog stick: drag the knob, values go to the emulator as -1..1
+@Composable
+private fun Stick(sendAxis: (Float, Float) -> Unit) {
+    var thumb by remember { mutableStateOf(Offset.Zero) }
+    Box(
+        Modifier.size(112.dp).background(Color(0x40303A46), CircleShape)
+            .pointerInput(Unit) {
+                fun update(p: Offset) {
+                    val r = size.width / 2f
+                    val c = Offset(r, size.height / 2f)
+                    var d = p - c
+                    val dist = d.getDistance()
+                    if (dist > r) d = d * (r / dist)
+                    thumb = d
+                    sendAxis(d.x / r, d.y / r)
+                }
+                detectDragGestures(
+                    onDragStart = { update(it) },
+                    onDrag = { change, _ -> update(change.position) },
+                    onDragEnd = { thumb = Offset.Zero; sendAxis(0f, 0f) },
+                    onDragCancel = { thumb = Offset.Zero; sendAxis(0f, 0f) }
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            Modifier.offset { IntOffset(thumb.x.roundToInt(), thumb.y.roundToInt()) }
+                .size(52.dp).background(Color(0xB0ECE8E1), CircleShape)
+        )
     }
-    // Face buttons
-    Column(Modifier.align(Alignment.BottomEnd).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        PadButton("X", KeyEvent.KEYCODE_BUTTON_X, send)
-        Row {
-            PadButton("Y", KeyEvent.KEYCODE_BUTTON_Y, send)
-            Spacer(Modifier.size(52.dp))
-            PadButton("A", KeyEvent.KEYCODE_BUTTON_A, send)
+}
+
+@Composable
+private fun BoxScope.Controls(
+    send: (Int, Int) -> Unit, sendAxis: (Float, Float) -> Unit, psStyle: Boolean, showStick: Boolean
+) {
+    // Left: D-pad (+ analog stick)
+    Row(
+        Modifier.align(Alignment.BottomStart).padding(20.dp),
+        verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            PadButton("\u25B2", KeyEvent.KEYCODE_DPAD_UP, send)
+            Row {
+                PadButton("\u25C4", KeyEvent.KEYCODE_DPAD_LEFT, send)
+                Spacer(Modifier.size(52.dp))
+                PadButton("\u25BA", KeyEvent.KEYCODE_DPAD_RIGHT, send)
+            }
+            PadButton("\u25BC", KeyEvent.KEYCODE_DPAD_DOWN, send)
         }
-        PadButton("B", KeyEvent.KEYCODE_BUTTON_B, send)
+        if (showStick) Stick(sendAxis)
     }
+
+    // Right: face buttons
+    Column(Modifier.align(Alignment.BottomEnd).padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (psStyle) {
+            // Triangle, Square, Circle, Cross (PlayStation layout)
+            PadButton("\u25B3", KeyEvent.KEYCODE_BUTTON_X, send, textColor = Color(0xFF4CD08B), textSize = 24)
+            Row {
+                PadButton("\u25A1", KeyEvent.KEYCODE_BUTTON_Y, send, textColor = Color(0xFFE87BB0), textSize = 24)
+                Spacer(Modifier.size(52.dp))
+                PadButton("\u25CB", KeyEvent.KEYCODE_BUTTON_A, send, textColor = Color(0xFFFF5C5C), textSize = 24)
+            }
+            PadButton("\u2715", KeyEvent.KEYCODE_BUTTON_B, send, textColor = Color(0xFF6FA8FF), textSize = 24)
+        } else {
+            PadButton("X", KeyEvent.KEYCODE_BUTTON_X, send)
+            Row {
+                PadButton("Y", KeyEvent.KEYCODE_BUTTON_Y, send)
+                Spacer(Modifier.size(52.dp))
+                PadButton("A", KeyEvent.KEYCODE_BUTTON_A, send)
+            }
+            PadButton("B", KeyEvent.KEYCODE_BUTTON_B, send)
+        }
+    }
+
     // Shoulders
     Row(Modifier.align(Alignment.TopStart).padding(16.dp)) { PadButton("L", KeyEvent.KEYCODE_BUTTON_L1, send, 48) }
     Row(Modifier.align(Alignment.TopEnd).padding(16.dp)) { PadButton("R", KeyEvent.KEYCODE_BUTTON_R1, send, 48) }
-    // Start / Select
-    Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        PadButton("Sel", KeyEvent.KEYCODE_BUTTON_SELECT, send, 44)
-        PadButton("Go", KeyEvent.KEYCODE_BUTTON_START, send, 44)
+
+    // Select / Start
+    Row(Modifier.align(Alignment.TopCenter).padding(top = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        PillButton("SELECT", KeyEvent.KEYCODE_BUTTON_SELECT, send)
+        PillButton("START", KeyEvent.KEYCODE_BUTTON_START, send)
     }
 }

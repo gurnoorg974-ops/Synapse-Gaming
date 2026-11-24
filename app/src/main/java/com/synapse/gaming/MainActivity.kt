@@ -236,6 +236,6 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.5", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.6", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

@@ -3,6 +3,16 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Needed so we can see/launch installed emulators (Android 11+) -->
     <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <package android:name="com.valvesoftware.steamlink" />
+        <package android:name="app.gamenative" />
+        <package android:name="com.winlator" />
+        <package android:name="com.winlator.cmod" />
+        <package android:name="io.github.yazanj082.momiji" />
+        <package android:name="com.playstation.remoteplay" />
         <package android:name="aenu.ax360e" />
         <package android:name="aenu.ax360e.free" />
         <package android:name="xyz.aethersx2.android" />
@@ -15,6 +25,10 @@
         <activity android:name=".PlayerActivity" android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|keyboardHidden|keyboard|smallestScreenSize|screenLayout|uiMode"
+            android:theme="@style/Theme.Synapse" />
+        <activity android:name=".CloudActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|smallestScreenSize|screenLayout|uiMode"
+            android:hardwareAccelerated="true"
             android:theme="@style/Theme.Synapse" />
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>

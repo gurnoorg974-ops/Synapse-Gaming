@@ -11,6 +11,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -51,6 +52,7 @@ enum class Tab(val label: String, val icon: ImageVector) {
     Library("Library", Icons.Default.Home),
     Menu("Menu", MenuIcon),
     Consoles("Consoles", Icons.AutoMirrored.Filled.List),
+    Cloud("Cloud", CloudIcon),
     Settings("Settings", Icons.Default.Settings)
 }
 
@@ -166,6 +168,7 @@ fun SynapseMain() {
                     if (root() == null) treePicker.launch(null) else tab = Tab.Consoles
                 }
                 Tab.Consoles -> ConsolesScreen(games, { filter = it; tab = Tab.Library }, ::addGames)
+                Tab.Cloud -> CloudScreen()
                 Tab.Settings -> SettingsScreen(games.size, { treePicker.launch(null) }, ::rescan)
             }
         }
@@ -233,7 +236,10 @@ fun LibraryScreen(games: List<Game>, filter: Console?, onFilter: (Console?) -> U
         LazyRow(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             item { FilterChip(filter == null, { onFilter(null) }, { Text("All") }, shape = RoundedCornerShape(50)) }
             items(Console.entries.filter { c -> games.any { it.console == c } }) { c ->
-                FilterChip(filter == c, { onFilter(c) }, { Text(c.label) }, shape = RoundedCornerShape(50))
+                FilterChip(
+                    filter == c, { onFilter(c) }, { Text(c.label) }, shape = RoundedCornerShape(50),
+                    leadingIcon = { ConsoleIcon(c, Modifier.size(16.dp), c.color) }
+                )
             }
         }
         when {
@@ -267,10 +273,14 @@ fun GameCard(game: Game, onClick: () -> Unit) {
         Box(Modifier.fillMaxWidth().aspectRatio(0.8f)) {
             CoverArt(game, Modifier.fillMaxSize())
             Column(Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 12.dp, end = 54.dp)) {
-                Text(
-                    game.console.label.uppercase(), color = game.console.color,
-                    fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ConsoleIcon(game.console, Modifier.size(14.dp), game.console.color)
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        game.console.label.uppercase(), color = game.console.color,
+                        fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelSmall
+                    )
+                }
                 Text(
                     game.title, maxLines = 2, color = androidx.compose.ui.graphics.Color.White,
                     fontWeight = FontWeight.Bold
@@ -317,7 +327,10 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit, onAdd: (Console
                     colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynGlassRim)
                 ) {
                     Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(10.dp).clip(RoundedCornerShape(50)).background(c.color))
+                        Box(
+                            Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(c.color.copy(alpha = 0.18f)),
+                            contentAlignment = Alignment.Center
+                        ) { ConsoleIcon(c, Modifier.size(28.dp), c.color) }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(c.label, fontWeight = FontWeight.Bold)
@@ -339,7 +352,10 @@ fun ConsolesScreen(games: List<Game>, onPick: (Console) -> Unit, onAdd: (Console
 
 @Composable
 fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState()).padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynGlassRim), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -351,6 +367,7 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 }
             }
         }
+        AutosaveCard()
         Card(colors = CardDefaults.cardColors(containerColor = SynCard), border = androidx.compose.foundation.BorderStroke(1.dp, SynGlassRim), shape = GxShape) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Your device", fontWeight = FontWeight.Bold)
@@ -358,6 +375,6 @@ fun SettingsScreen(count: Int, onPick: () -> Unit, onRescan: () -> Unit) {
                 Text(if (SocInfo.isSnapdragon) "Snapdragon detected" else "Not a Snapdragon chip", color = SynMuted)
             }
         }
-        Text("Synapse Gaming v0.14", color = SynMuted, style = MaterialTheme.typography.labelSmall)
+        Text("Synapse Gaming v0.16", color = SynMuted, style = MaterialTheme.typography.labelSmall)
     }
 }

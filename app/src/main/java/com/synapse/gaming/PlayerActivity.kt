@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -31,6 +32,7 @@ import com.swordfish.libretrodroid.GLRetroView
 import com.swordfish.libretrodroid.GLRetroViewData
 import com.swordfish.libretrodroid.ShaderConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
@@ -39,11 +41,49 @@ import kotlin.math.roundToInt
 
 class PlayerActivity : ComponentActivity() {
     var retro: GLRetroView? = null
+    var canSave = false
+    private var saveKey = "game"
+
+    private fun autosaveOn() = getSharedPreferences("synapse", MODE_PRIVATE).getBoolean("autosave", true)
+    private fun stateFile() = File(File(filesDir, "autosave").apply { mkdirs() }, "$saveKey.state")
+
+    // Saves the exact moment you are at, so the next launch resumes right there
+    fun saveState() {
+        val v = retro ?: return
+        if (!canSave || !autosaveOn()) return
+        try {
+            val bytes = v.serializeState()
+            if (bytes.isNotEmpty()) {
+                val tmp = File(stateFile().path + ".tmp")
+                tmp.writeBytes(bytes)
+                tmp.renameTo(stateFile())
+            }
+        } catch (e: Exception) {
+        }
+    }
+
+    fun restoreState() {
+        val v = retro ?: return
+        if (!autosaveOn()) return
+        val f = stateFile()
+        if (!f.exists()) return
+        try {
+            v.unserializeState(f.readBytes())
+            Toast.makeText(this, "Resumed from your autosave", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+        }
+    }
+
+    override fun onPause() {
+        saveState()
+        super.onPause()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val uri = Uri.parse(intent.getStringExtra("uri"))
+        saveKey = (intent.getStringExtra("uri") ?: "").hashCode().toString(16)
         val core = intent.getStringExtra("core")
         if (core == null) { finish(); return }
         val ext = intent.getStringExtra("ext") ?: ""
@@ -106,6 +146,20 @@ fun PlayerScreen(uri: Uri, core: String, ext: String) {
             }
         } catch (e: Exception) {
             error = "Could not start: ${e.message}"
+        }
+    }
+
+    // Resume from the autosave a moment after the game starts, then keep saving in the background
+    LaunchedEffect(paths) {
+        if (paths == null) return@LaunchedEffect
+        delay(2200)
+        act.restoreState()
+        act.canSave = true
+        if (core != "ppsspp") {
+            while (true) {
+                delay(120_000)
+                act.saveState()
+            }
         }
     }
 

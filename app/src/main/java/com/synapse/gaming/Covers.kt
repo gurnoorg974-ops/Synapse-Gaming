@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -102,10 +103,7 @@ fun CoverArt(game: Game, modifier: Modifier = Modifier) {
         if (b != null) {
             Image(b, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, alignment = Alignment.TopCenter)
         } else {
-            Text(
-                initials(game.title), Modifier.align(Alignment.Center),
-                color = Color.White.copy(alpha = 0.35f), fontSize = 46.sp, fontWeight = FontWeight.Black
-            )
+            ConsoleIcon(game.console, Modifier.align(Alignment.Center).size(64.dp), Color.White.copy(alpha = 0.45f))
         }
         Box(
             Modifier.fillMaxSize().background(
